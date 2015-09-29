@@ -1,0 +1,165 @@
+<hr>
+<fieldset><legend></legend>
+<table class="wp-list-table widefat fixed striped posts">
+	<tr>
+		<?php 
+		$theadsaldo=array('id'=>'No','idcus'=>'Username pelanggan','noquo'=>'No. Quotation','saldo'=>'Jumlah saldo','waktu'=>'waktu aksi','status'=>'Aksi'); 
+		$getallsal=get_member_saldo();
+		foreach($theadsaldo as $ksal => $valsal) { ?>
+				<td><?php echo $valsal;?></td>
+		<?php 
+		} ?>
+	</tr>
+	<?php  if ($getallsal) {
+		$no=1;
+		foreach($getallsal as $kalls => $vallsal) { ?>
+		<tr>
+			<?php foreach($theadsaldo as $keysl =>$kolsl) {  ?>
+				<td><?php 
+				switch ($keysl) {
+					case 'id':
+						$td_saldo=$no;
+						break;
+					case 'idcus':
+						$user=get_user_by('id',$vallsal[$keysl]);
+						$td_saldo=$user->user_login;
+						break;
+					case 'noquo':
+						$noquo_saldo=getdata_bykoland_id('member_saldo','noquo','idcus',$vallsal['idcus']);
+						if (is_array($noquo_saldo)){
+							$td_saldo=array_map('return_explode_noquo',$noquo_saldo);
+							$td_saldo=implode($td_saldo,',');
+						}else{
+							$td_saldo=$noquo_saldo;
+						}
+						break;
+					case 'status':
+						$sts_saldo=getdata_bykoland_id('member_saldo','status','idcus',$vallsal['idcus']);
+						add_thickbox();
+						$toshow='sts_saldo';
+						ob_start();				
+						include MEMBERZONE_UI.'templates/memberzone-ui-thickbox.php';
+						$thick_sts_saldo=ob_get_clean();
+						$td_saldo=$thick_sts_saldo;
+						break;
+					default:
+						$td_saldo=$vallsal[$keysl];
+						break;
+					
+				}
+				echo $td_saldo;
+				?></td>	
+			<?php } ?>
+		</tr>
+		<?php 
+		$no++;
+		} 
+		}	?>
+</table>
+</fieldset>
+
+
+case 'sts_saldo':
+			$selector='sts-saldo';
+			$label='Detail saldo';
+			$css_class=$css_class.' memberzone-button memberzone-button-primary';
+			if ($sts_saldo && is_array($sts_saldo)) {
+				$content .='<ul>';
+				$nosl=0;
+				foreach($sts_saldo as $valstsaldo) {
+					
+					$content .='<li>';
+					$noq_saldo=explode('-',$noquo_saldo[$nosl]);
+					$content .='#'.$noq_saldo[1].'&nbsp;';
+					$valstsaldo=explode('-',$valstsaldo);
+					
+					if (count($valstsaldo)> 1) {
+						$content .='diminta <h3>Rp '.$valstsaldo[1].'</h3>';
+						$content .='<a href="#" class="button button-primary">Menyetujui</a>';
+					}else{
+						switch ($valstsaldo[0]) {
+							case '1':
+								$content .='belum diambil';
+								break;
+							case '3':
+								$content .='sudah diambil';
+								break;
+						}
+					}
+					$content .='</li>';
+					$nosl++;
+				}
+				$content .='</ul>';
+			}
+			
+			break;
+//member-saldo
+
+
+
+	global $wp_query;
+	$total =$wp_query->max_num_pages;
+	if ($total>1){ // only bother with the rest if we have more than 1 page!
+		if ( !$current_page = get_query_var('paged') ) // get the current page
+			$current_page = 1; // structure of "format" depends on whether we're using pretty permalinks
+		if( get_option('permalink_structure') ) {
+			$format = '&paged=%#%';
+		}else{
+			$format = 'page/%#%/';
+		}
+		echo paginate_links(array(
+          'base'     => get_pagenum_link(1) . '%_%',
+          'format'   => $format,
+          'current'  => $current_page,
+          'total'    => $total,
+          'mid_size' => 4,
+          'type'     => 'list'
+		));
+	} 
+
+
+
+
+
+//ga tau ini diaats
+
+<?php 
+ob_start();				
+include MEMBERZONE_UI.'templates/memberzone-ui-member-saldo.php';
+$ui_member_saldo=ob_get_clean();		
+echo ($member_saldo)?  $ui_member_saldo : '';?>
+<p style="display:none;" id="permalinks">?page=request-page</p>
+
+//js countdown
+var timestamp = (Date.now() + 1000 * 60 * 60 * 24 * 3) - Date.now();
+
+timestamp /= 1000; // from ms to seconds
+
+function component(x, v) {
+    return Math.floor(x / v);
+}
+
+var $div = $('div');
+
+setInterval(function() {
+    
+    timestamp--;
+    
+    var days    = component(timestamp, 24 * 60 * 60),
+        hours   = component(timestamp,      60 * 60) % 24,
+        minutes = component(timestamp,           60) % 60,
+        seconds = component(timestamp,            1) % 60;
+    
+    $div.html(days + " days, " + hours + ":" + minutes + ":" + seconds);
+    
+}, 1000);
+
+
+//add timestamp
+
+$nextWeek = time() + (7 * 24 * 60 * 60);
+                   // 7 days; 24 hours; 60 mins; 60 secs
+echo 'Now:       '. date('Y-m-d') ."\n";
+echo 'Next Week: '. date('Y-m-d', $nextWeek) ."\n";
+// or using strtotime():
+echo 'Next Week: '. date('Y-m-d', strtotime('+1 week')) ."\n";

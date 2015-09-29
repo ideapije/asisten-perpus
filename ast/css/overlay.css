@@ -1,0 +1,14 @@
+.entry-header{
+	position:relative;
+}
+.caption-img{
+	position:absolute;
+	top:45%;
+	left:0;
+	width:100%;	
+}
+.btn-quo {
+  color: #1b1b1b;
+  background-color: #feed7a;
+  border-color: #357ebd;
+}

@@ -1,0 +1,276 @@
+function idprod_toformlog(){ 
+		ob_start();				
+		include MEMBERZONE_UI . 'templates/memberzone-ui-custom-fieldlogin.php';
+		$textfield=ob_get_clean();
+		echo $textfield;
+	}
+	function idprod_authenticate( $user, $username, $password ){
+			$my_value = $_POST['nohp'];
+			$user = get_user_by('login', $username );			
+			$stored_value = get_user_meta($user->ID, 'nohp', true);
+			if(!$user || empty($my_value) || $my_value !=$stored_value){
+				remove_action('authenticate', 'wp_authenticate_username_password', 20); 
+				$user = new WP_Error( 'denied', __("<strong>ERROR</strong>: You're unique identifier was invalid.") );
+			}
+			return null;
+	}
+	
+	$this->loader->add_action('login_form','Member_tambahan', 'idprod_toformlog');
+		$this->loader->add_filter( 'authenticate','Member_tambahan', 'idprod_authenticate');
+		
+		function custom_redirectlogin(){
+		 $current_user   = wp_get_current_user();		 
+		$role_name      = $current_user->roles[0];
+		if ( 'subscriber' === $role_name ) {
+			var_dump($_POST);
+			//wp_redirect( '' );
+		}
+	}
+	$this->loader->add_action('admin_init','Member_tambahan', 'custom_redirectlogin');
+	
+	
+	//----------------------------tambahan baru 	
+	
+	
+	
+	
+	
+	function memberzone_form_registrasi(){
+		if (!is_user_logged_in()) {
+				global $memberzone_load_css;
+				$memberzone_load_css=true;
+				$register_enabled=get_option('users_can_register');
+				if ($register_enabled) {
+					$output=memberzone_reg_field();
+				}else{
+					$output='registrasi pengguna baru tidak disediakan :(';
+				}
+				return $output;
+		}
+	}
+	
+	
+	function memberzone_login_form(){
+		if (!is_user_logged_in()) {
+			global $memberzone_load_css;
+			$memberzone_load_css=true;
+			$output=memberzone_login_field();
+		}else{
+			$output='user info here';
+		}
+		return $output;
+	}
+	
+	
+	function memberzone_login_member() {
+		if (isset($_POST['memberzone_user_login']) && wp_verify_nonce($_POST['memberzone_user_login'])) {
+			$user=get_userdatabylogin($_POST['memberzone_user_login']);
+			if (!$user) {
+				//if user name doesn't exist
+				memberzone_errors()->add('empty_username',__('Invalid username'));
+			}
+			if (!isset($_POST['memberzone_user_pass']) || $_POST['memberzone_user_pass']) {
+				//if no password was entered
+				memberzone_errors()->add('empty_password',__('Please enter a password '));
+			}
+			//check the user's login with their password
+			if (!wp_check_password($_POST['memberzone_user_pass'],$user->user_pass,$user->ID) ) {
+				//if the password is incorrect for the spesified user 
+				memberzone_errors()->add('empty_password',__('incorrect password '));
+			}
+			$errors=memberzone_errors()->get_error_messages();
+			//only log the user in there are errors
+			if (empty($errors)) {
+				wp_setcookie($_POST['memberzone_user_login'],$_POST['memberzone_user_pass'],true);
+				wp_set_current_user($user->ID,$_POST['memberzone_user_login']);
+				do_action('wp_login',$_POST['memberzone_user_login']);
+				wp_redirect(admin_url()); exit;
+			}
+			
+		}
+		
+	}
+	
+	function memberzone_add_new_member() {
+		if (isset( $_POST["memberzone_user_login"] ) && wp_verify_nonce($_POST['memberzone_register_nonce'], 'memberzone-register-nonce')) {
+		$user_login		= $_POST["memberzone_user_login"];	
+		$user_email		= $_POST["memberzone_user_email"];
+		$user_first 	= $_POST["memberzone_user_first"];
+		$user_last	 	= $_POST["memberzone_user_last"];
+		$user_pass		= $_POST["memberzone_user_pass"];
+		$pass_confirm 	= $_POST["memberzone_user_pass_confirm"];
+		// this is required for username checks
+		require_once(ABSPATH . WPINC . '/registration.php');
+		if(username_exists($user_login)) {
+			// Username already registered
+			memberzone_errors()->add('username_unavailable', __('Username already taken'));
+		}
+		if(!validate_username($user_login)) {
+			// invalid username
+			memberzone_errors()->add('username_invalid', __('Invalid username'));
+		}
+		if($user_login == '') {
+			// empty username
+			memberzone_errors()->add('username_empty', __('Please enter a username'));
+		}
+		if(!is_email($user_email)) {
+			//invalid email
+			memberzone_errors()->add('email_invalid', __('Invalid email'));
+		}
+		if(email_exists($user_email)) {
+			//Email address already registered
+			memberzone_errors()->add('email_used', __('Email already registered'));
+		}
+		if($user_pass == '') {
+			// passwords do not match
+			memberzone_errors()->add('password_empty', __('Please enter a password'));
+		}
+		if($user_pass != $pass_confirm) {
+			// passwords do not match
+			memberzone_errors()->add('password_mismatch', __('Passwords do not match'));
+		}
+		$errors = memberzone_errors()->get_error_messages();
+		// only create the user in if there are no errors
+		if(empty($errors)) {
+			$new_user_id = wp_insert_user(array(
+					'user_login'		=> $user_login,
+					'user_pass'	 		=> $user_pass,
+					'user_email'		=> $user_email,
+					'first_name'		=> $user_first,
+					'last_name'			=> $user_last,
+					'user_registered'	=> date('Y-m-d H:i:s'),
+					'role'				=> 'subscriber'
+				)
+			);
+			if($new_user_id) {
+				// send an email to the admin alerting them of the registration
+				wp_new_user_notification($new_user_id);
+ 
+				// log the new user in
+				wp_setcookie($user_login, $user_pass, true);
+				wp_set_current_user($new_user_id, $user_login);	
+				do_action('wp_login', $user_login);
+ 
+				// send the newly created user to the home page after logging them in
+				wp_redirect(admin_url()); exit;
+				}
+			}
+ 
+		}	
+	}
+	
+
+	$time = current_time('mysql');
+
+$data = array(
+    'comment_post_ID' => 1,
+    'comment_author' => 'admin',
+    'comment_author_email' => 'admin@admin.com',
+    'comment_author_url' => 'http://',
+    'comment_content' => 'content here',
+    'comment_type' => '',
+    'comment_parent' => 0,
+    'user_id' => 1,
+    'comment_author_IP' => '127.0.0.1',
+    'comment_agent' => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.10) Gecko/2009042316 Firefox/3.0.10 (.NET CLR 3.5.30729)',
+    'comment_date' => $time,
+    'comment_approved' => 1,
+);
+
+wp_insert_comment($data);
+
+
+///form penawaran
+if($get_opsi):
+				foreach($get_opsi as $valopsi) {
+					$content .='<p><label>'.$valopsi["meta_label"].':</label>';
+					switch ($valopsi['meta_type']) {
+					$get_opsional = get_opsional_custom_metakey($valopsi['meta_key']);
+								case 'select':
+								$content .='<select name="'.$valopsi['meta_key'].'">';
+								foreach($get_opsional as $pilihan):
+									($pilihan['id']==get_post_meta($idpost,$valopsi['meta_key'], true))? $selected='selected' : $selected='';
+									$content .='<option value="'.$pilihan['id'].'" '.$selected.'>'.$pilihan['opsional'].'</option>';
+								endforeach;
+								$content .='</select>';
+								break;
+								case 'checkbox':
+									foreach($get_opsional as $pilihan):
+										$content .='<input type="radio" name="'.$valopsi['meta_key'].'" value="'.$pilihan['id'].'"/>'.$pilihan['opsional'];
+									endforeach;
+								break;
+								case 'radio':								
+								foreach($get_opsional as $pilihan):
+									$content .='<input type="'.$valopsi['meta_type'].'" name="'.$valopsi['meta_key'].'" value="'.$pilihan['id'].'"/>'.$pilihan['opsional'];
+									endforeach;
+								 break;
+						}
+					$content .='</p>';
+				}
+			endif; 
+
+			
+			
+menghapus menu 
+function remove_menus(){
+  
+  remove_menu_page( 'index.php' );                  //Dashboard
+  remove_menu_page( 'edit.php' );                   //Posts
+  remove_menu_page( 'upload.php' );                 //Media
+  remove_menu_page( 'edit.php?post_type=page' );    //Pages
+  remove_menu_page( 'edit-comments.php' );          //Comments
+  remove_menu_page( 'themes.php' );                 //Appearance
+  remove_menu_page( 'plugins.php' );                //Plugins
+  remove_menu_page( 'users.php' );                  //Users
+  remove_menu_page( 'tools.php' );                  //Tools
+  remove_menu_page( 'options-general.php' );        //Settings
+  
+}
+add_action( 'admin_menu', 'remove_menus' );
+
+
+//order submenu page
+
+$this->loader->add_action('admin_menu','Member_tambahan', function() {
+  			global $submenu;
+  			$found = FALSE;
+  			$before = $after = array();
+  			$tax_slug = 'my_custom_tax'; // change your taxonomy name here
+  				foreach ($submenu['edit.php'] as $item ) {
+    			if ( ! $found || $item[2] === 'edit-tags.php?taxonomy=' . $tax_slug ) {
+      				$before[] = $item;
+    			} else {
+      				$after[] = $item;
+    			}
+    			if( $item[2] === 'edit-tags.php?taxonomy=category' ) $found = TRUE;
+  			}
+  			$submenu['edit.php'] = array_values( array_merge( $before, $after ) );
+		}, 0 );
+
+
+
+thickbox custom opsional
+//$get_opsi=get_alldata('custom_meta_key');
+		
+			if (count($get_opsi)>0) {
+				foreach($get_opsi as $keyopsi => $valopsi) {
+					$content .='<tr>';
+					switch ($valopsi['meta_opsional']) {
+						case 1:
+							$content .='<td><label>'.$valopsi["meta_label"].'</label></td><td> :';
+							$opsional =get_opsional_custom_metakey($valopsi['meta_key'],$idpost);
+
+							foreach($opsional as $valop) {
+									$content .='&nbsp<input type="radio" name="'.$valopsi['meta_key'].'" value="'.$valop['id'].'" class="'.$valopsi['meta_key'].'" />&nbsp'.$valop['opsional'];
+							}
+							$content .='</td>';
+							break;
+						default:
+							if ($valopsi['meta_key']!=='bukutersedia') {
+								$content .='<td><label>'.$valopsi["meta_label"].'</label></td><td><strong>: '.get_post_meta($idpost,$valopsi['meta_key'],true).'</strong></td>';
+							}
+							break;
+					}
+					$content .='</tr>';
+				}
+			}

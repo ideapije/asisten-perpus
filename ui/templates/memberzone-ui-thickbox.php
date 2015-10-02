@@ -63,7 +63,7 @@ if (isset($toshow) && !cekosong($toshow)) {
 		case 'login':
 			$selector='login';
 			$css_class=$css_class.' memberzone-button memberzone-button-primary memberzone-width-100';
-			$label='Login untuk meminta penawaran ';
+			$label='Login untuk booking buku';
 			if (get_option( 'users_can_register')): 
 				$content .='<span id="imgurl" style="display:none;">'.MEMBERZONE_AST.'images/ajax-loader.gif'.'</span>';
 				$content .='<p style="color:#000;background:#F5D76E;padding:5px;">';
@@ -123,46 +123,6 @@ if (isset($toshow) && !cekosong($toshow)) {
 			$content .='<input name="action" type="hidden" value="memberzone_penawaran">';
 			$content .='</form >';
 			break;
-		case 'dpeminjaman':
-			$jenis_pinjam=getdata_bykoland_id('log_peminjaman','jenis_pinjam','id_booking',$vbody['id']);
-			$content .='<table>';
-			$content .='<tr>';
-			$content .='<td><strong>Username / Nama pengguna</strong></td>';
-			$content .='<td>'.$user->user_login.'</td>';
-			$content .='</tr>';
-			$content .='<tr>';
-			$content .='<td><strong>Judul Buku</strong></td>';
-			$content .='<td>'.$postingan->post_title.'</td>';
-			$content .='</tr>';
-			$content .='<tr>';
-			$content .='<td><strong>Kode RFID</strong></td>';
-			$content .='<td>'.$postingan->post_title.'</td>';
-			$content .='</tr>';
-			$content .='<tr>';
-			$content .='<td><strong>Jenis Peminjaman</strong></td>';
-			($jenis_pinjam==0)? $jp='pinjam dengan memesan' : $jp='pinjam langsung';
-			$content .='<td>'.$jp.'</td>';
-			$content .='</tr>';
-			if ($jenis_pinjam==0) {
-				$content .='<tr>';
-				$content .='<td><strong>Waktu pemesanan</strong></td>';
-				$content .='<td>'.$vbody['booking_inquired'].'</td>';
-				$content .='</tr>';
-			}
-			$content .='<tr>';
-			$content .='<td><strong>Waktu Peminjaman</strong></td>';
-			$content .='<td>'.$new_timeinqured.'</td>';
-			$content .='</tr>';
-			$content .='<tr>';
-			$content .='<td><strong>waktu harus kembali</strong></td>';
-			$content .='<td>'.$new_exptime.'</td>';
-			$content .='</tr>';
-			$content .='</table>';
-			$selector ='detail-'.$vbody['id'];
-			$label='Detail Peminjaman';
-			$css_class='thickbox button button-primary';
-			break;
-		
 	}
 }
 ?>

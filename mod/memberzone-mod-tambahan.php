@@ -18,6 +18,29 @@ class Member_tambahan {
     }
 
     function fungsi_init(){
+    	$get_log_peminjaman=get_alldata('log_peminjaman');
+    	if ($get_log_peminjaman && is_array($get_log_peminjaman)) {
+    		foreach ($get_log_peminjaman as $klogpinjam => $vlogpinjam) {
+				$tgl_h_kembali	=substr($vlogpinjam['waktu_harus_kembali'],0,10);
+				if (get_calculate_date($tgl_h_kembali)>=0) { 
+    				    $user_id_booked=intval(getdata_bykoland_id('perpus_booking','user_id','id',$vlogpinjam['id_booking']));
+    					$post_id_booked=intval(getdata_bykoland_id('perpus_booking','post_id','id',$vlogpinjam['id_booking']));
+    					$get_post=get_post($post_id_booked);
+    					$user_nohp=get_the_author_meta('nohp', $user_id_booked);
+    					if (!getdata_bykoland_id('outbox','peminjaman_id','peminjaman_id',$vlogpinjam['id'],'1')) {
+							$data=array(
+    							'DestinationNumber'=>'085726270879'
+    							,'SenderID'=>'pkm'
+    							,'TextDecoded'=>'TERTANGGAL '.date('d F Y').', Peminjaman buku '.$get_post->post_title.' sudah masuk jatuh tempo, segera lakukan proses pengembalian buku diperpustakaan! hari ini'
+    							,'CreatorID'=>'Gammu 1.28.90'
+    							,'peminjaman_id'=>$vlogpinjam['id']
+    						);
+    						insert_data('outbox',$data,true);
+    					}    				
+    			}    			
+    		}
+    	}
+
     	$segment_url_3=getUriSegment(3);
     	if (isset($segment_url_3) && $segment_url_3=='post-new.php' && get_userrole()==='subscriber') {
     		wp_redirect(esc_url(admin_url('profile.php')));
@@ -81,6 +104,10 @@ class Member_tambahan {
 					break;
 				case '8':
 					echo "<script>alert('Selamat konfirmasi pengambilan anda diterima');</script>";
+				case '9':
+					echo "<script>alert('Maaf konfirmasi pengembalian anda tidak valid');</script>";
+				case '10':
+					echo "<script>alert('Selamat konfirmasi pengembalian anda diterima');</script>";
 					break;
         	}
         }
@@ -369,12 +396,20 @@ function get_opsional($id=''){
 								$tbody .='<td>Disetujui</td>';
 								break;
 							case 3:
-								$tbody .='<td><strong>TERPINJAM</strong></td>';
-								add_thickbox();
-								$toshow='dpeminjaman';
-								ob_start();				
-								include MEMBERZONE_UI.'templates/memberzone-ui-thickbox.php';
-								$btn_aksi =ob_get_clean();
+								$log_pinjam_rfid=getdata_bykoland_id('log_peminjaman','uid','id_booking',$vbody['id']);
+								$log_pinjam_ID=getdata_bykoland_id('log_peminjaman','id','id_booking',$vbody['id']);
+								$booking_rfid=getdata_bykoland_id('uid_book','uid','id',$log_pinjam_rfid);
+								if (!getdata_bykoland_id('log_kembalian','id','id_peminjaman',$log_pinjam_ID) && $vbody['booking_status']!=1) {
+									$btn_aksi ='<a href="#" class="memberzone-button memberzone-button-primary btn-recieved-return-book" id="'.memberzone_enkrip($log_pinjam_ID).'">menerima pengambilan</a>';
+
+									$tbody .='<td><strong>TERPINJAM KODE RFID['.$booking_rfid.']</strong></td>';
+								}else{
+									$tbody .='<td><strong>SUDAH KEMBALI KODE RFID['.$booking_rfid.']</strong></td>';
+									$btn_aksi ='pengembalian dikonfirmasi admin';
+								}
+								break;
+							case 6:
+								$btn_aksi ='hapus history transaksi';
 								break;
 						}
 						break;
@@ -446,23 +481,48 @@ function memberzone_cus_request_page(){
 						$list_time 		=$value['booking_expired'];
 						$list_content	='Selamat pemesanan anda sudah diketahui admin, <h3>Segera ambil buku '.$post->post_title.' diperpustakaan <h3>';
 						$list_status	='Terkonfirmasi';
-						$list_action	='<div class="txt'.$value['id'].'uid"><div/>';
-						$list_action	.='<a href="#" class="memberzone-button memberzone-button-primary btn-recieved-book" id="'.$value['id'].'">konfirmasi pengambilan</a>';
+						if (isset($_GET['b']) && $uid=getdata_bykoland_id('uid_book','uid','id_link_uid',decrypt_url($_GET['b']))) {
+							$list_content .='<hr>';
+							if (is_array($uid)) {
+								$list_content .='<select name="txt'.$value['id'].'uid">';
+								foreach ($uid as $kuid => $vuid) {
+									$list_content .='<option value="'.$vuid.'">'.$vuid.'</option>';
+								}
+								$list_content .='</select>';
+							}else{
+								$list_content .='<input type="number" class="regtablear-text txt'.$value['id'].'uid" value="'.$uid.'"/>';
+							}
+							$list_action 	.='<a href="#" class="memberzone-button memberzone-button-primary btn-submit-recieved">submit pengambilan</a>';
+						}else{
+							$list_action	.='<a href="admin.php?page=request-page&b='.encrypt_url($value['post_id']).'" class="memberzone-button memberzone-button-primary btn-recieved-book">konfirmasi pengambilan</a>';
+						}
 						break;
 					case 3:
-						$log_pinjam_in=getdata_bykoland_id('log_peminjaman','waktu_masuk','id_booking',$value['id']);
-						$d1 = new DateTime($log_pinjam_in);
-						$log_pinjam_exp=getdata_bykoland_id('log_peminjaman','waktu_harus_kembali','id_booking',$value['id']);
-						$d2 = new DateTime($log_pinjam_exp);
-						$list_time 		= 'Tanggal kadaluarsa peminjaman <br/>'.$log_pinjam_exp;
-						$list_content	='peminjaman berhasil dilakukan, kembalikan buku sesuai waktu yang sudah ditentukan <br/>';
-						$id_rfid =getdata_bykoland_id('log_peminjaman','uid','id_booking',$value['id']);					
-						$no_rfid =getdata_bykoland_id('uid_book','uid','id',$id_rfid);					
+						$log_pinjam_ID		=getdata_bykoland_id('log_peminjaman','id','id_booking',$value['id']);
+						$log_pinjam_exp		=getdata_bykoland_id('log_peminjaman','waktu_harus_kembali','id_booking',$value['id']);
+						$log_pinjam_rfid 	=getdata_bykoland_id('log_peminjaman','uid','id_booking',$value['id']);
+						$list_time 			= 'Tanggal kadaluarsa peminjaman <br/>'.$log_pinjam_exp;
+						$list_content		='peminjaman berhasil dilakukan, kembalikan buku sesuai waktu yang sudah ditentukan <br/>';
+						$tgl_h_kembali 		=substr($log_pinjam_exp,0,10);					
+						$no_rfid 			=getdata_bykoland_id('uid_book','uid','id',$log_pinjam_rfid);					
 						$list_content	.='Kode RFID : <strong>'.$no_rfid.'</strong>';
-						//$list_content .=$d1->diff($d2);
-						
+						$get_count_downddays =get_calculate_date($tgl_h_kembali);
+						if ($get_count_downddays > 0 ) {
+						 	$count_down_days='Lebih dari '.$get_count_downddays.' hari';
+						 	$list_action ='<a href="#" class="memberzone-button memberzone-button-primary btn-confrim-return" id="'.memberzone_enkrip($log_pinjam_ID).'">konfirmasi pengembalian</a>';
+						}elseif (intval($get_count_downddays)===0) {
+						 	$count_down_days='SUDAH JATUH TEMPO PENGEMBALIAN'; 
+						 	$list_action ='<a href="#" class="memberzone-button memberzone-button-primary btn-confrim-return" id="'.memberzone_enkrip($log_pinjam_ID).'">konfirmasi pengembalian</a>';
+						}else{						 	
+						 	$count_down_days=substr($get_count_downddays,1,1).' hari Lagi';
+						 	$list_action ='';
+						} 
+						$list_content	.='<h3>Masa Peminjaman : <strong>'.$count_down_days.'</strong> </h3>';
 						$list_status	='Terpinjam';
-						//$list_action	='<a href="#" class="memberzone-button memberzone-button-primary btn-recieved-book">konfirmasi pengambilan</a>';
+						break;
+					case 6:
+						$list_status ='sudah selesai';
+						$list_content ='alkhmdulilah sudah selesai nanti tinggal ada pilihan hapus history';
 						break;
 				}
 					ob_start();		
@@ -491,6 +551,11 @@ function memberzone_data_rfid(){
 }
 function memberzone_data_rfid_page()
 {
+	$tgl_skrg		=date('Y-m-d h:i:s');
+	if (ini_get('date.timezone')) {
+    	echo 'date.timezone: ' . ini_get('date.timezone').' <br/>';
+	}
+	
 	$data =get_alldata('uid_book');
 	$thead_data=array('id'=>'aksi','uid'=>'kode rfid','type_uid'=>'jenis kode rfid','id_link_uid'=>'id terkait rfid');
 	$thead ='<tr>';
@@ -530,7 +595,10 @@ function memberzone_peminjaman_langsung(){
 }
 function memberzone_langsung_pinjam_page()
 {
-	echo "langsung pinjam";
+	ob_start();				
+	include MEMBERZONE_UI.'templates/memberzone-ui-pinjam-langsung.php';
+	$content =ob_get_clean();
+	echo $content;	
 }
 	
 }

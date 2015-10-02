@@ -138,12 +138,24 @@ class Memberzone_Module_Penawaran extends WP_Widget {
 							break;
 						case 'log_peminjaman':
 							$idbooking=memberzone_dekrip($data['id_booking']);
-							$data['id_booking']=$idbooking;
+							$data['uid']=intval($data['uid']);
+							$data['id_booking']=intval($idbooking);
 							$data['waktu_harus_kembali']=duedate_pinjam();
-							$data['status_uid']=1;
+							update_data('uid_book',array('status_uid'=>1),array('id'=>$data['uid']));
+							update_data('perpus_booking',array('booking_status'=>3),array('id'=>$data['id_booking']));
 							insert_data($_POST['tabel'],$data);
 							wp_redirect(esc_url(admin_url('admin.php?page=list-booking-page')));
 							exit();
+							break;
+						case 'log_kembalian':
+							$data['id_peminjaman']=memberzone_dekrip($data['id_peminjaman']);
+							$log_pinjam_exp		=getdata_bykoland_id('log_peminjaman','waktu_harus_kembali','id',$data['id_peminjaman']);
+							$log_pinjam_expdate =substr($log_pinjam_exp,0,10);					
+							$count_telat        =get_calculate_date($log_pinjam_expdate); 
+							if ($count_telat > 0) {
+								$data['jml_telat']=$count_telat;
+							}
+							insert_data($_POST['tabel'],$data);
 							break;
 						default:
 							insert_data($_POST['tabel'],$data);
@@ -212,27 +224,24 @@ class Memberzone_Module_Penawaran extends WP_Widget {
 					if ($idbooking=getdata_bykoland_id('log_peminjaman','id_booking','uid',$id_uid_book)) {
 						update_data('perpus_booking',array('booking_status'=>3),array('id'=>$idbooking));
 						$no=8;						
+					}else{
+						$no=7;
 					}
 				}
-				$no=7;
 				echo 'admin.php?page=request-page&e='.$no;
 				break;
-			case 'getuid':
-				if (!cekosong($_POST)) {
+			case 'cekembali':
+				if (!cekosong($_POST)){
 					$data=array_map('return_sanitize_text', $_POST);
-					$post_id=getdata_bykoland_id('perpus_booking','post_id','id',$data['idbook']);
-					$uid=getdata_bykoland_id('uid_book','uid','id_link_uid',$post_id);
-					if (is_array($uid)) {
-						$send ='<select name="txt'.$data['idbook'].'uid">';
-						foreach ($uid as $kuid => $vuid) {
-							$send .='<option value="'.$vuid.'">'.$vuid.'</option>';
-						}
-						$send .='</select>';
-						echo $send;
+					if ($peminjaman_id=getdata_bykoland_id('log_kembalian','id_peminjaman','id_peminjaman',memberzone_dekrip($data['id_peminjaman']))) {
+						$idbooking=getdata_bykoland_id('log_peminjaman','id_booking','id',$peminjaman_id);
+						update_data('perpus_booking',array('booking_status'=>6),array('id'=>$idbooking));
+						$no=10;
 					}else{
-						echo '<input type="number" class="regtablear-text txt'.$data['idbook'].'uid" value="'.$uid.'"/>';
+						$no=9;
 					}
 				}
+				echo 'admin.php?page=request-page&e='.$no;
 				break;
 		}
 	}

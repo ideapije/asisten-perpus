@@ -503,10 +503,12 @@ function get_alldata($tabel=''){
     return false;
     
 }
-function insert_data($tabel='',$data=array()){	
+function insert_data($tabel='',$data=array(),$noprefix=false){	
 	if (!cekosong($tabel)) {
 		global $wpdb;	
-		$tabel=$wpdb->prefix.$tabel;
+        if (!$noprefix) {
+            $tabel=$wpdb->prefix.$tabel;   
+        }
 		$wpdb->insert($tabel,$data);
 	}
 	
@@ -772,10 +774,12 @@ function memberzone_reg_field(){
 		}
 	}
 	
-	function  getdata_bykoland_id($tabel='',$kol='',$kolid='',$id=''){
+	function  getdata_bykoland_id($tabel='',$kol='',$kolid='',$id='',$noprefix=false){
 		if (!cekosong(array($tabel,$kol,$kolid,$id))) {
 			global $wpdb;
-            $tabel=$wpdb->prefix.$tabel;
+            if (!$noprefix) {
+                $tabel=$wpdb->prefix.$tabel;
+            }
             $hasil=$wpdb->get_results("SELECT * FROM $tabel WHERE $kolid='$id'",ARRAY_A);
             if ($hasil) {
 				$send=array();
@@ -827,4 +831,22 @@ function memberzone_reg_field(){
 		$qDecoded      = rtrim( mcrypt_decrypt( MCRYPT_RIJNDAEL_256, md5( $cryptKey ), base64_decode( $q ), MCRYPT_MODE_CBC, md5( md5( $cryptKey ) ) ), "\0");
 		return( $qDecoded );
 	}
-	
+	function get_date_diff($date2){
+        $date1=date('Y-m-d');
+        if (!cekosong(array($date1,$date2))) {
+            $diff = abs(strtotime($date2) - strtotime($date1));
+            $years = floor($diff / (365*60*60*24));
+            $months = floor(($diff - $years * 365*60*60*24) / (30*60*60*24));
+            $days = floor(($diff - $years * 365*60*60*24 - $months*30*60*60*24)/ (60*60*24));
+            return array($years,$months,$days);
+        }
+        return false;
+    }
+
+    function get_calculate_date($duedate){
+         $now = time(); // or your date as well
+         $duedate = strtotime($duedate);
+         $datediff = $now - $duedate;
+         return floor($datediff/(60*60*24));
+    }
+

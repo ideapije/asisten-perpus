@@ -23,7 +23,7 @@ class Memberzone_Base {
 		//$this->loader->add_action('widgets_init', 'Memberzone_Module_Penawaran', 'register_widgets');
 		$this->loader->add_action('admin_post_memberzone_penawaran', 'Memberzone_Module_Penawaran', 'processing');
 		
-		$this->loader->add_action('init','Member_tambahan', 'set_permalink');		
+		//$this->loader->add_action('init','Member_tambahan', 'set_permalink');		
 		//$this->loader->add_action('init','Member_tambahan', 'cetakpdf');		
 		$this->loader->add_action( 'admin_head','Member_tambahan','hapus_pemberitahuan_update_wp_for_user', 1 );
 		$this->loader->add_action('init','Member_tambahan', 'fungsi_init');		
@@ -33,7 +33,7 @@ class Memberzone_Base {
 		$this->loader->add_action('init', 'Member_tambahan', 'allow_html');
 		//$this->loader->add_action('dashboard_glance_items','Member_tambahan','count_req_quo');	
 		$this->loader->add_action('login_message','Member_tambahan', 'pesan_setelahregister');
-		$this->loader->add_action('init','Member_tambahan','page_about_quo');
+		//$this->loader->add_action('init','Member_tambahan','page_about_quo');
 		$this->loader->add_filter('comments_open','Member_tambahan','disable_comment_onpage'); 
 		$this->loader->add_action('admin_menu','Member_tambahan','submenu_post_opsional'); 
 		$this->loader->add_action('admin_menu','Member_tambahan','admin_menu_list_booking'); 

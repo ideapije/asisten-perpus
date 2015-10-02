@@ -245,26 +245,22 @@ jQuery(document).ready(function () {
 			});					
 		};
 	});	
-	jQuery(document).on('click','.btn-recieved-book',function(){
-		var id = jQuery(this).attr('id');
-		var uid=jQuery('.txt'+id+'uid').val();
-		var data={
-				'action':'memberzone_penawaran'
-				,'memberzone-penawaran-kirim':'getuid'
-				,'idbook':id
-		};
-		jQuery('.txt'+id+'uid').attr('style','display:block;');
-		jQuery(this).addClass('btn-submit-recieved');
-		jQuery(this).text('Submit pengambilan');
-		jQuery.ajax({
-					url: "admin-post.php",
-					data:data,
-					type:"POST",
-					success: function(data){
-        				jQuery('.txt'+id+'uid').html(data);		
-					}		
-		});
+	jQuery(document).on('keyup','.keydown-book',function(){
+			if (str.length == 0) { 
+            	document.getElementById("txtHprod").innerHTML = "";
+            	return;
+            } else {
+            	var xmlhttp = new XMLHttpRequest();
+            	xmlhttp.onreadystatechange = function() {
+            		if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+            			document.getElementById("txtHprod").innerHTML = xmlhttp.responseText;
+            		}
+            }
+            xmlhttp.open("GET", window.location.origin+"/toko/gudang/getproduk?p="+str, true);
+            xmlhttp.send();
+        }
 	});	
+
 	jQuery(document).on('click','.btn-submit-recieved',function(){
 		var id = jQuery(this).attr('id');
 		var uid=jQuery('.txt'+id+'uid').val();
@@ -282,5 +278,42 @@ jQuery(document).ready(function () {
 					}		
 		});
 	});	
-	
+	jQuery(document).on('click','.btn-confrim-return',function(){
+		var id=jQuery(this).attr('id');
+		var data={
+				'action':'memberzone_penawaran'
+				,'memberzone-penawaran-kirim':'cekembali'
+				,'id_peminjaman':id
+		};
+		jQuery.ajax({
+					url: "admin-post.php",
+					data:data,
+					type:"POST",
+					success: function(data){
+        				window.location.href = data;		
+					}		
+		});
+	});
+	jQuery(document).on('click','.btn-recieved-return-book',function(){
+		var id=jQuery(this).attr('id');
+		var data={
+				'action':'memberzone_penawaran'
+				,'memberzone-penawaran-kirim':'insertdata'
+				,'tabel':'log_kembalian'
+				,'id_peminjaman':id
+				,'permalink':'admin.php?page=list-booking-page'
+		};
+		var result = confirm("yakin anda sudah menerima pengembalian buku ini?");
+		if (result){
+			jQuery.ajax({
+					url: "admin-post.php",
+					data:data,
+					type:"POST",
+					success: function(data){
+        				window.location.href = data;		
+					}		
+			});
+		};
+	});
+
 });	

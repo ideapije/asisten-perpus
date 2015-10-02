@@ -157,6 +157,7 @@ jQuery(document).ready(function () {
 		var id = jQuery(this).attr('id');
 		jQuery('.val-'+id).hide();
 		jQuery('#txt-'+id).show();
+		jQuery(this).attr('style','display:none;');
 	});
 
 	jQuery(document).on('keydown','.maxval',function(){
@@ -164,13 +165,7 @@ jQuery(document).ready(function () {
 	});	
 	
 	
-	jQuery(document).on('keypress','.input',function(e){
-		var fsubmit=jQuery('#fsubmit').text();
-		if (e.which == 13 ) {
-			jQuery('form#'+fsubmit).submit();
-			return false;    
-		}
-	});
+
 	
 	jQuery(document).on('click','.btn-acc-booking',function(){
 		var id=jQuery(this).attr('id');

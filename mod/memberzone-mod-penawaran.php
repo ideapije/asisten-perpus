@@ -206,12 +206,16 @@ class Memberzone_Module_Penawaran extends WP_Widget {
 				break;
 			case 'update_profiluser':
 				if(decrypt_url($_POST['id'])==$user->ID) {
-					$allpost=$_POST;
-					foreach($allpost as $key=> $value) {
-						if (!cekosong($value)) {
-							wp_update_user(array( 'ID' => $user->ID, $key => $value ));
-							update_user_meta($user->ID,$key,$value);
+					$data=array_map('return_sanitize_text', $_POST);
+					$unset=array('memberzone-penawaran-kirim','action');
+					$data=unset_larik($data,$unset);
+					$member_basic = Memberzone_Base::get_member_info();
+					foreach ($data as $key => $value) {
+						if (cekosong($value)) {
+							unset($data[$key]);
 						}
+
+						update_user_meta($member_basic->ID,$key,$value);
 					}
 				}
 				wp_redirect(esc_url(admin_url('admin.php?page=profil-page')));

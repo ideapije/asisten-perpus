@@ -29,7 +29,7 @@ class Member_tambahan {
     					$user_nohp=get_the_author_meta('nohp', $user_id_booked);
     					if (!getdata_bykoland_id('outbox','peminjaman_id','peminjaman_id',$vlogpinjam['id'],'1')) {
 							$data=array(
-    							'DestinationNumber'=>'085726270879'
+    							'DestinationNumber'=>$user_nohp
     							,'SenderID'=>'pkm'
     							,'TextDecoded'=>'TERTANGGAL '.date('d F Y').', Peminjaman buku '.$get_post->post_title.' sudah masuk jatuh tempo, segera lakukan proses pengembalian buku diperpustakaan! hari ini'
     							,'CreatorID'=>'Gammu 1.28.90'
